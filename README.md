@@ -4,6 +4,9 @@
 
 From Idea to Specification is a SaaS platform that helps product teams, founders, and engineers transform unstructured thoughts into structured, implementation-ready technical specifications that can be acted on immediately.
 
+<img width="1883" height="908" alt="1" src="https://github.com/user-attachments/assets/6860a12f-86ba-4489-9b4d-7d64cd054d81" />
+
+
 Great product ideas rarely start clean. They emerge as scattered notes, whiteboard sketches, voice memos, or informal conversations. Before development can begin, those ideas must be translated into precise technical specifications—a step that is often manual, slow, and prone to misinterpretation.
 
 **This platform removes that friction.**
