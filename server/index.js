@@ -51,16 +51,28 @@ const SubscriberSchema = new mongoose.Schema({
 const Subscriber = mongoose.model('Subscriber', SubscriberSchema);
 
 
-// --- EMAIL TRANSPORTER (FIXED FOR RENDER) ---
-// We replaced "service: gmail" with specific host and port settings
-// to prevent the ETIMEDOUT error.
+// --- EMAIL TRANSPORTER (UPDATED FOR PORT 587) ---
+// We are switching to Port 587 because 465 is timing out on your server.
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
-  port: 465,
-  secure: true, // Use SSL
+  port: 587,            // Changed from 465 to 587
+  secure: false,        // Must be false for Port 587 (it uses STARTTLS automatically)
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
+  },
+  tls: {
+    rejectUnauthorized: false // Helps prevents some cloud SSL errors
+  }
+});
+
+// --- VERIFY CONNECTION ON STARTUP ---
+// This will print a log immediately when the server starts so you know it works.
+transporter.verify(function (error, success) {
+  if (error) {
+    console.log("❌ SMTP CONNECTION ERROR:", error);
+  } else {
+    console.log("✅ Server is ready to send emails");
   }
 });
 
