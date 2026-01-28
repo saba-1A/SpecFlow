@@ -2,9 +2,8 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
 const ResetPasswordPage: React.FC = () => {
-  const { token } = useParams(); // Grabs the long token from the URL
+  const { token } = useParams(); 
   const navigate = useNavigate();
-  
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,7 +22,6 @@ const ResetPasswordPage: React.FC = () => {
     }
 
     try {
-      // Call your backend API
       const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/reset-password/${token}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -38,9 +36,8 @@ const ResetPasswordPage: React.FC = () => {
 
       setSuccess(true);
       
-      // Redirect to login after 2 seconds
       setTimeout(() => {
-        navigate('/auth'); // Change this to your login route (e.g., '/' or '/login')
+        navigate('/auth'); 
       }, 2000);
 
     } catch (err: any) {
@@ -51,9 +48,10 @@ const ResetPasswordPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative font-sans text-slate-900 overflow-hidden bg-[#F8FAFC] pt-28">
+    // CHANGE HERE: Changed 'pt-28' to 'py-28' and 'overflow-hidden' to 'overflow-x-hidden'
+    <div className="min-h-screen flex items-center justify-center relative font-sans text-slate-900 overflow-x-hidden bg-[#F8FAFC] py-28">
       
-      {/* BACKGROUND EFFECTS (Same as AuthPage) */}
+      {/* BACKGROUND EFFECTS */}
       <div className="fixed inset-0 pointer-events-none">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-100/50 via-transparent to-transparent"></div>
           <div className="absolute top-[-20%] left-[50%] -translate-x-1/2 w-[1000px] h-[1000px] bg-purple-200/40 rounded-full blur-[120px] mix-blend-multiply animate-pulse"></div>
@@ -64,7 +62,7 @@ const ResetPasswordPage: React.FC = () => {
         
         {/* HEADER TEXT */}
         <div className="text-center mb-10">
-           <h1 className="text-4xl font-black mb-3 text-slate-900 tracking-tight">Set New Password</h1>
+           <h1 className="text-4xl font-black mb-3 text-slate-900 tracking-tight">Create New Password</h1>
            <p className="text-slate-500 font-medium">Enter your new password below.</p>
         </div>
 
