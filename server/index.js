@@ -52,18 +52,13 @@ const Subscriber = mongoose.model('Subscriber', SubscriberSchema);
 
 
 // --- EMAIL TRANSPORTER (RESEND SMTP) ---
-// Resend requires specific settings:
-// Host: smtp.resend.com
-// Port: 465 (Secure)
-// User: "resend"
-// Pass: Your API Key (re_...)
 const transporter = nodemailer.createTransport({
   host: "smtp.resend.com",
   port: 465,
   secure: true, 
   auth: {
-    user: "resend",              // This is ALWAYS "resend"
-    pass: process.env.EMAIL_PASS // This must be your "re_..." API Key
+    user: "resend",              
+    pass: process.env.EMAIL_PASS 
   }
 });
 
@@ -162,7 +157,7 @@ app.post('/api/auth/google', async (req, res) => {
   }
 });
 
-// 4. FORGOT PASSWORD
+// 4. FORGOT PASSWORD (DEBUG MODE: AWAIT ENABLED)
 app.post('/api/auth/forgot-password', async (req, res) => {
   const { email } = req.body;
   try {
@@ -172,10 +167,9 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '15m' });
     const resetLink = `${CLIENT_URL}/reset-password/${token}`;
 
-    // NOTE: If you don't have a verified domain, "from" must be "onboarding@resend.dev"
     const mailOptions = {
-      from: "SpecFlow <onboarding@resend.dev>", // Use this for testing
-      to: email, // If testing, this ONLY works if 'email' is YOUR account email
+      from: "SpecFlow <onboarding@resend.dev>", 
+      to: email, 
       subject: 'Password Reset',
       html: `
         <h2>Reset Your Password</h2>
@@ -184,12 +178,16 @@ app.post('/api/auth/forgot-password', async (req, res) => {
       `
     };
 
-    transporter.sendMail(mailOptions).catch(err => console.error("Email Error:", err));
+    // --- DEBUG CHANGE: Added 'await' ---
+    // The browser will now WAIT for this to finish.
+    // If it fails, the catch block below sends the real error to the frontend.
+    await transporter.sendMail(mailOptions);
 
     res.status(200).json({ message: "Reset link sent successfully!" });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Failed to send email" });
+    console.error("Email Error:", error);
+    // Send the EXACT error message to the browser
+    res.status(500).json({ message: "Failed to send email", error: error.message });
   }
 });
 
@@ -240,7 +238,7 @@ app.post('/api/create-payment-intent', async (req, res) => {
 });
 
 /* 
-   NEWSLETTER SUBSCRIPTION
+   NEWSLETTER SUBSCRIPTION (DEBUG MODE: AWAIT ENABLED)
 */
 app.post('/api/subscribe', async (req, res) => {
   const { email } = req.body;
@@ -271,18 +269,20 @@ app.post('/api/subscribe', async (req, res) => {
       `,
     };
 
-    transporter.sendMail(mailOptions).catch(err => console.error("Email Error:", err));
+    // --- DEBUG CHANGE: Added 'await' ---
+    await transporter.sendMail(mailOptions);
 
     res.status(201).json({ message: 'Successfully subscribed!' });
 
   } catch (error) {
     console.error('Subscription error:', error);
-    res.status(500).json({ error: 'Server error. Please try again later.' });
+    // Send the EXACT error message to the browser
+    res.status(500).json({ error: error.message });
   }
 });
 
 /* 
-   CONTACT FORM
+   CONTACT FORM (DEBUG MODE: AWAIT ENABLED)
 */
 app.post('/api/contact', async (req, res) => {
   const { name, email, subject, message } = req.body;
@@ -292,12 +292,10 @@ app.post('/api/contact', async (req, res) => {
   }
 
   try {
-    // NOTE: Contact forms are tricky without a domain.
-    // We send FROM Resend, but we put the user's email in "replyTo"
     const mailOptions = {
       from: "SpecFlow Contact <onboarding@resend.dev>", 
-      to: 'sabaf0186@gmail.com',  // Send to YOUR admin email
-      replyTo: email,             // So you can reply to the user
+      to: 'sabaf0186@gmail.com',  
+      replyTo: email,             
       subject: `New Contact Msg: ${subject || 'No Subject'}`,
       html: `
         <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee;">
@@ -312,13 +310,15 @@ app.post('/api/contact', async (req, res) => {
       `,
     };
 
-    transporter.sendMail(mailOptions).catch(err => console.error("Email Error:", err));
+    // --- DEBUG CHANGE: Added 'await' ---
+    await transporter.sendMail(mailOptions);
 
     res.status(200).json({ message: 'Email sent successfully!' });
 
   } catch (error) {
     console.error('Contact form error:', error);
-    res.status(500).json({ error: 'Failed to send message.' });
+    // Send the EXACT error message to the browser
+    res.status(500).json({ error: error.message });
   }
 });
 
