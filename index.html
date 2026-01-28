@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpecFlow - Idea to Spec</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries,typography"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        "orbai-bg": "#f5f5f5",
+                        "orbai-text": "#0e1229",
+                        "primary": "#0099ff", 
+                        "secondary": "#0e1229",
+                        "card-white": "#ffffff",
+                    },
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
+                        body: ['Inter', 'sans-serif'],
+                    },
+                    borderRadius: {
+                        '4xl': '2rem',
+                        '5xl': '2.5rem',
+                        'orbai': '20px', 
+                        'orbai-lg': '40px',
+                    },
+                    boxShadow: {
+                        'orbai-button': '0px 0.6px 1.1px -1.25px rgba(61, 61, 61, 0.72), 0px 2.3px 4.1px -2.5px rgba(61, 61, 61, 0.64), 0px 10px 18px -3.75px rgba(61, 61, 61, 0.25), 0px 0.7px 0.7px -0.5px rgba(0, 0, 0, 0.35)',
+                        'orbai-card': '0px 0.7px 0.7px -0.66px rgba(0, 0, 0, 0.08), 0px 1.8px 1.8px -1.33px rgba(0, 0, 0, 0.08), 0px 3.6px 3.6px -2px rgba(0, 0, 0, 0.07), 0px 6.8px 6.8px -2.66px rgba(0, 0, 0, 0.07), 0px 13.6px 13.6px -3.33px rgba(0, 0, 0, 0.05), 0px 30px 30px -4px rgba(0, 0, 0, 0.02), inset 0px 3px 1px 0px rgb(255, 255, 255)',
+                        'orbai-nav': '0px 0.7px 1px -0.5px rgba(122, 122, 122, 0.58), 0px 1.8px 2.5px -1.0px rgba(122, 122, 122, 0.57), 0px 13px 19px -2.7px rgba(122, 122, 122, 0.46)'
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-out forwards',
+                        'slide-up': 'slideUp 0.6s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            background-color: #f5f5f5;
+            color: #0e1229;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .font-inter { font-family: 'Inter', sans-serif; }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-router-dom": "https://esm.sh/react-router-dom@^7.12.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.35.0",
+    "framer-motion": "https://esm.sh/framer-motion@^12.26.2",
+    "tailwind-merge": "https://esm.sh/tailwind-merge@^3.4.0",
+    "clsx": "https://esm.sh/clsx@^2.1.1"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+    <div id="root"></div>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>

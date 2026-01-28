@@ -1,0 +1,10 @@
+body {
+  margin: 0;
+  font-family: sans-serif;
+}
+/* Hide Stripe Developer Tools (test mode popup) */
+button[aria-label="Open Stripe Developer Tools"],
+div[class*="FloatingActionButton"],
+div[class*="StripeDevTools"] {
+  display: none !important;
+}

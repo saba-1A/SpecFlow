@@ -1,0 +1,7 @@
+{
+  "name": "SpecFlow - Idea to Spec",
+  "description": "An AI-powered platform that transforms raw ideas and messy notes into developer-ready product specifications, PRDs, and user stories using Gemini.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
