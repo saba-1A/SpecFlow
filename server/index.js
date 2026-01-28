@@ -8,7 +8,6 @@ const { OAuth2Client } = require('google-auth-library');
 require('dotenv').config();
 
 // --- NEW: STRIPE CONFIGURATION ---
-// Make sure STRIPE_SECRET_KEY is in your .env file
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const app = express();
@@ -17,10 +16,7 @@ const app = express();
 app.use(express.json());
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    // ⚠️ SECURITY: In the future, replace 'true' with your specific Vercel URL
-    // For now, this allows your Vercel frontend to connect immediately.
     return callback(null, true); 
   },
   credentials: true
@@ -40,8 +36,6 @@ mongoose.connect(MONGO_URL)
   .catch((err) => console.error("❌ MongoDB Error:", err));
 
 // --- SCHEMAS ---
-
-// 1. User Schema
 const UserSchema = new mongoose.Schema({
   name: { type: String },
   email: { type: String, required: true, unique: true },
@@ -50,7 +44,6 @@ const UserSchema = new mongoose.Schema({
 });
 const User = mongoose.model('User', UserSchema);
 
-// 2. Subscriber Schema (ADDED FOR NEWSLETTER)
 const SubscriberSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   subscribedAt: { type: Date, default: Date.now },
@@ -58,9 +51,13 @@ const SubscriberSchema = new mongoose.Schema({
 const Subscriber = mongoose.model('Subscriber', SubscriberSchema);
 
 
-// --- EMAIL TRANSPORTER ---
+// --- EMAIL TRANSPORTER (FIXED FOR RENDER) ---
+// We replaced "service: gmail" with specific host and port settings
+// to prevent the ETIMEDOUT error.
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true, // Use SSL
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
@@ -127,7 +124,6 @@ app.post('/api/auth/google', async (req, res) => {
   const { token } = req.body; 
 
   try {
-    // 1. Use the Access Token to get User Info from Google
     const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -139,23 +135,13 @@ app.post('/api/auth/google', async (req, res) => {
     }
 
     const { email, name, picture } = googleUser;
-
-    // 2. Check if user exists in DB
     let user = await User.findOne({ email });
 
     if (!user) {
-      // 3. Create new user if not found
-      user = await User.create({
-        name,
-        email,
-        profilePicture: picture,
-      });
+      user = await User.create({ name, email, profilePicture: picture });
     }
 
-    // 4. Generate JWT for your app
     const jwtToken = jwt.sign({ email: user.email, id: user._id }, JWT_SECRET, { expiresIn: '1h' });
-    
-    // 5. Send back User and Token
     res.status(200).json({ user, token: jwtToken });
 
   } catch (error) {
@@ -164,7 +150,7 @@ app.post('/api/auth/google', async (req, res) => {
   }
 });
 
-// 4. FORGOT PASSWORD
+// 4. FORGOT PASSWORD (FIXED SPEED)
 app.post('/api/auth/forgot-password', async (req, res) => {
   const { email } = req.body;
   try {
@@ -185,7 +171,9 @@ app.post('/api/auth/forgot-password', async (req, res) => {
       `
     };
 
-    await transporter.sendMail(mailOptions);
+    // NO AWAIT HERE - Send in background
+    transporter.sendMail(mailOptions).catch(err => console.error("Email Error:", err));
+
     res.status(200).json({ message: "Reset link sent successfully!" });
   } catch (error) {
     console.error(error);
@@ -210,41 +198,28 @@ app.post('/api/auth/reset-password/:token', async (req, res) => {
 });
 
 /* 
-   =======================================================
-   NEW: STRIPE PAYMENT INTENT ROUTE
-   This calculates price securely on the server.
-   =======================================================
+   STRIPE PAYMENT
 */
 app.post('/api/create-payment-intent', async (req, res) => {
   const { billingCycle, email } = req.body;
 
   try {
-    // 1. Define Pricing Logic (Must match your frontend display)
-    const basePrice = 2400; // $24.00 in cents
+    const basePrice = 2400; 
     let finalAmount = basePrice;
 
-    // Apply logic: Yearly = $24/mo * 12 months * 20% discount
     if (billingCycle === 'yearly') {
       finalAmount = (basePrice * 12) * 0.80; 
     }
 
-    // 2. Create the PaymentIntent
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(finalAmount), // Stripe expects integers (cents)
+      amount: Math.round(finalAmount), 
       currency: "usd",
-      receipt_email: email, // Optional: Sends receipt to user
-      automatic_payment_methods: {
-        enabled: true,
-      },
-      metadata: {
-        billingCycle: billingCycle
-      }
+      receipt_email: email, 
+      automatic_payment_methods: { enabled: true },
+      metadata: { billingCycle: billingCycle }
     });
 
-    // 3. Send Client Secret to Frontend
-    res.send({
-      clientSecret: paymentIntent.client_secret,
-    });
+    res.send({ clientSecret: paymentIntent.client_secret });
     
   } catch (error) {
     console.error("Stripe Error:", error);
@@ -253,7 +228,7 @@ app.post('/api/create-payment-intent', async (req, res) => {
 });
 
 /* 
-   NEWSLETTER SUBSCRIPTION ROUTE (ADDED)
+   NEWSLETTER SUBSCRIPTION (FIXED SPEED)
 */
 app.post('/api/subscribe', async (req, res) => {
   const { email } = req.body;
@@ -263,17 +238,14 @@ app.post('/api/subscribe', async (req, res) => {
   }
 
   try {
-    // 1. Check if already subscribed
     const existing = await Subscriber.findOne({ email });
     if (existing) {
       return res.status(400).json({ error: 'You are already subscribed!' });
     }
 
-    // 2. Save to MongoDB
     const newSubscriber = new Subscriber({ email });
     await newSubscriber.save();
 
-    // 3. Send Confirmation Email
     const mailOptions = {
       from: `"SpecFlow Team" <${process.env.EMAIL_USER}>`,
       to: email,
@@ -283,12 +255,6 @@ app.post('/api/subscribe', async (req, res) => {
           <h2 style="color: #4F46E5;">Welcome to the Inner Circle!</h2>
           <p>Hi there,</p>
           <p>Thanks for subscribing to <strong>SpecFlow Insights</strong>. You've just joined 10,000+ builders shipping faster with AI.</p>
-          <p>Expect to receive:</p>
-          <ul>
-            <li>Exclusive prompt engineering tips</li>
-            <li>Early access to new features</li>
-            <li>Case studies on automated documentation</li>
-          </ul>
           <p>Let's build the future.</p>
           <br/>
           <p>Best,<br/>The SpecFlow Team</p>
@@ -296,7 +262,8 @@ app.post('/api/subscribe', async (req, res) => {
       `,
     };
 
-    await transporter.sendMail(mailOptions);
+    // NO AWAIT HERE - Send in background
+    transporter.sendMail(mailOptions).catch(err => console.error("Email Error:", err));
 
     res.status(201).json({ message: 'Successfully subscribed!' });
 
@@ -305,9 +272,9 @@ app.post('/api/subscribe', async (req, res) => {
     res.status(500).json({ error: 'Server error. Please try again later.' });
   }
 });
+
 /* 
-   CONTACT FORM ROUTE (ADDED)
-   Sends email to Admin (sabaf0186@gmail.com)
+   CONTACT FORM (FIXED SPEED)
 */
 app.post('/api/contact', async (req, res) => {
   const { name, email, subject, message } = req.body;
@@ -318,9 +285,9 @@ app.post('/api/contact', async (req, res) => {
 
   try {
     const mailOptions = {
-      from: `"SpecFlow Contact" <${process.env.EMAIL_USER}>`, // Sender (Your App)
-      to: 'sabaf0186@gmail.com', // Receiver (YOU)
-      replyTo: email, // When you click reply, it goes to the User
+      from: `"SpecFlow Contact" <${process.env.EMAIL_USER}>`, 
+      to: 'sabaf0186@gmail.com', 
+      replyTo: email, 
       subject: `New Contact Msg: ${subject || 'No Subject'}`,
       html: `
         <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee;">
@@ -335,7 +302,9 @@ app.post('/api/contact', async (req, res) => {
       `,
     };
 
-    await transporter.sendMail(mailOptions);
+    // NO AWAIT HERE - Send in background
+    transporter.sendMail(mailOptions).catch(err => console.error("Email Error:", err));
+
     res.status(200).json({ message: 'Email sent successfully!' });
 
   } catch (error) {
@@ -343,4 +312,5 @@ app.post('/api/contact', async (req, res) => {
     res.status(500).json({ error: 'Failed to send message.' });
   }
 });
+
 app.listen(PORT, () => console.log(`🚀 Server running on port: ${PORT}`));
