@@ -52,20 +52,19 @@ const Subscriber = mongoose.model('Subscriber', SubscriberSchema);
 
 
 // --- EMAIL TRANSPORTER (BREVO ON PORT 2525) ---
-// Render Free Tier blocks Port 587. We MUST use Port 2525.
 const transporter = nodemailer.createTransport({
   host: "smtp-relay.brevo.com",
-  port: 2525,     // <--- THIS IS THE FIX. 2525 works on Render Free Tier.
-  secure: false,  // Must be false for 2525
+  port: 2525,
+  secure: false, 
   auth: {
-    user: process.env.EMAIL_USER, // Your Brevo Login Email
-    pass: process.env.EMAIL_PASS  // Your Brevo SMTP Key
+    user: process.env.EMAIL_USER, // This is the ID: a104e...
+    pass: process.env.EMAIL_PASS  // This is the Key: xsmtp...
   },
   tls: {
-    rejectUnauthorized: false // Helps avoid "Self Signed Certificate" errors
+    rejectUnauthorized: false
   },
-  connectionTimeout: 10000, // Wait 10 seconds before failing
-  greetingTimeout: 5000     // Wait 5 seconds for Brevo to say "Hello"
+  connectionTimeout: 10000, 
+  greetingTimeout: 5000     
 });
 
 // Verify connection on startup
@@ -73,9 +72,13 @@ transporter.verify(function (error, success) {
   if (error) {
     console.log("❌ BREVO CONNECTION ERROR:", error);
   } else {
-    console.log("✅ Connected to Brevo SMTP Successfully on Port 2525");
+    console.log("✅ Connected to Brevo SMTP Successfully");
   }
 });
+
+//Helper to get the Sender Email
+// We hardcode this to your Gmail because 'EMAIL_USER' is now a Brevo ID
+const SENDER_EMAIL = "sabaf0186@gmail.com"; 
 
 // ================= ROUTES ================= //
 
@@ -163,7 +166,7 @@ app.post('/api/auth/google', async (req, res) => {
   }
 });
 
-// 4. FORGOT PASSWORD (DEBUG MODE ENABLED)
+// 4. FORGOT PASSWORD
 app.post('/api/auth/forgot-password', async (req, res) => {
   const { email } = req.body;
   try {
@@ -174,7 +177,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     const resetLink = `${CLIENT_URL}/reset-password/${token}`;
 
     const mailOptions = {
-      from: `"SpecFlow Support" <${process.env.EMAIL_USER}>`, 
+      from: `"SpecFlow Support" <${SENDER_EMAIL}>`, // <--- FIXED: Uses Gmail
       to: email, 
       subject: 'Password Reset',
       html: `
@@ -184,13 +187,11 @@ app.post('/api/auth/forgot-password', async (req, res) => {
       `
     };
 
-    // AWAIT: This sends the error to your Network Tab if it fails
     await transporter.sendMail(mailOptions);
 
     res.status(200).json({ message: "Reset link sent successfully!" });
   } catch (error) {
     console.error("Email Error:", error);
-    // Sends the REAL error to your browser
     res.status(500).json({ message: "Failed to send email", error: error.message });
   }
 });
@@ -242,7 +243,7 @@ app.post('/api/create-payment-intent', async (req, res) => {
 });
 
 /* 
-   NEWSLETTER SUBSCRIPTION (DEBUG MODE ENABLED)
+   NEWSLETTER SUBSCRIPTION
 */
 app.post('/api/subscribe', async (req, res) => {
   const { email } = req.body;
@@ -261,7 +262,7 @@ app.post('/api/subscribe', async (req, res) => {
     await newSubscriber.save();
 
     const mailOptions = {
-      from: `"SpecFlow Team" <${process.env.EMAIL_USER}>`,
+      from: `"SpecFlow Team" <${SENDER_EMAIL}>`, // <--- FIXED: Uses Gmail
       to: email,
       subject: 'Welcome to SpecFlow Insights 🚀',
       html: `
@@ -284,7 +285,7 @@ app.post('/api/subscribe', async (req, res) => {
 });
 
 /* 
-   CONTACT FORM (DEBUG MODE ENABLED)
+   CONTACT FORM
 */
 app.post('/api/contact', async (req, res) => {
   const { name, email, subject, message } = req.body;
@@ -295,9 +296,9 @@ app.post('/api/contact', async (req, res) => {
 
   try {
     const mailOptions = {
-      from: `"Contact Form" <${process.env.EMAIL_USER}>`, 
-      to: 'sabaf0186@gmail.com',  // Send to ADMIN
-      replyTo: email,             // Reply to USER
+      from: `"Contact Form" <${SENDER_EMAIL}>`, // <--- FIXED: Uses Gmail
+      to: 'sabaf0186@gmail.com',  
+      replyTo: email,             
       subject: `New Contact Msg: ${subject || 'No Subject'}`,
       html: `
         <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee;">
