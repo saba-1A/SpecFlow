@@ -51,16 +51,18 @@ const SubscriberSchema = new mongoose.Schema({
 const Subscriber = mongoose.model('Subscriber', SubscriberSchema);
 
 
-// --- EMAIL TRANSPORTER (BREVO SMTP) ---
-// Host: smtp-relay.brevo.com
-// Port: 587 (Standard)
+// --- EMAIL TRANSPORTER (BREVO - FIXED PORT) ---
+// We switched to Port 2525 because 587 was timing out.
 const transporter = nodemailer.createTransport({
   host: "smtp-relay.brevo.com",
-  port: 587,
-  secure: false, // Must be false for 587
+  port: 2525,     // <--- CHANGED TO 2525 (The "Anti-Block" Port)
+  secure: false,  // Must be false for 2525
   auth: {
-    user: process.env.EMAIL_USER, // Your Brevo Login Email
-    pass: process.env.EMAIL_PASS  // Your Brevo SMTP Key
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  },
+  tls: {
+    rejectUnauthorized: false // Helps avoid SSL errors on cloud servers
   }
 });
 
@@ -69,7 +71,7 @@ transporter.verify(function (error, success) {
   if (error) {
     console.log("❌ BREVO CONNECTION ERROR:", error);
   } else {
-    console.log("✅ Connected to Brevo SMTP Successfully");
+    console.log("✅ Connected to Brevo SMTP Successfully on Port 2525");
   }
 });
 
@@ -159,7 +161,7 @@ app.post('/api/auth/google', async (req, res) => {
   }
 });
 
-// 4. FORGOT PASSWORD (DEBUG MODE ENABLED)
+// 4. FORGOT PASSWORD
 app.post('/api/auth/forgot-password', async (req, res) => {
   const { email } = req.body;
   try {
@@ -170,7 +172,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     const resetLink = `${CLIENT_URL}/reset-password/${token}`;
 
     const mailOptions = {
-      from: `"SpecFlow Support" <${process.env.EMAIL_USER}>`, // Brevo requires the sender to be YOU
+      from: `"SpecFlow Support" <${process.env.EMAIL_USER}>`, 
       to: email, 
       subject: 'Password Reset',
       html: `
@@ -180,7 +182,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
       `
     };
 
-    // AWAIT: This sends the error to your Network Tab if it fails
+    // We keep await so you can see the error in the Network Tab
     await transporter.sendMail(mailOptions);
 
     res.status(200).json({ message: "Reset link sent successfully!" });
@@ -237,7 +239,7 @@ app.post('/api/create-payment-intent', async (req, res) => {
 });
 
 /* 
-   NEWSLETTER SUBSCRIPTION (DEBUG MODE ENABLED)
+   NEWSLETTER SUBSCRIPTION
 */
 app.post('/api/subscribe', async (req, res) => {
   const { email } = req.body;
@@ -279,7 +281,7 @@ app.post('/api/subscribe', async (req, res) => {
 });
 
 /* 
-   CONTACT FORM (DEBUG MODE ENABLED)
+   CONTACT FORM
 */
 app.post('/api/contact', async (req, res) => {
   const { name, email, subject, message } = req.body;
@@ -291,8 +293,8 @@ app.post('/api/contact', async (req, res) => {
   try {
     const mailOptions = {
       from: `"Contact Form" <${process.env.EMAIL_USER}>`, 
-      to: 'sabaf0186@gmail.com',  // Send to ADMIN
-      replyTo: email,             // Reply to USER
+      to: 'sabaf0186@gmail.com',  
+      replyTo: email,             
       subject: `New Contact Msg: ${subject || 'No Subject'}`,
       html: `
         <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee;">
