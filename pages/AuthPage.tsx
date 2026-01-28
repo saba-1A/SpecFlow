@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
-import { useAuth } from '../components/AuthContext'; 
+import { useAuth } from '../components/AuthContext'; // Ensure this path is correct for your project
 
 type AuthMode = 'login' | 'signup' | 'forgot';
 
 const AuthPage: React.FC = () => {
   const navigate = useNavigate();
-  const { login } = useAuth(); 
+  const { login } = useAuth(); // Get the login function from context
   const [authMode, setAuthMode] = useState<AuthMode>('login');
+  
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -26,7 +27,7 @@ const AuthPage: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    
+
     const API_URL = `${import.meta.env.VITE_API_URL}/auth`;
 
     try {
@@ -56,11 +57,15 @@ const AuthPage: React.FC = () => {
         throw new Error(data.msg || 'Something went wrong');
       }
 
+      // --- SUCCESS HANDLER ---
       if (authMode === 'forgot') {
         alert("Password reset link sent to your email!");
         setAuthMode('login');
       } else {
+        // 1. Update Global Auth State
         login(data.token, data.user); 
+        
+        // 2. REDIRECT TO GENERATOR PAGE IMMEDIATELY
         navigate('/generate');
       }
 
@@ -71,6 +76,7 @@ const AuthPage: React.FC = () => {
     }
   };
 
+  // --- GOOGLE LOGIN HANDLER ---
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       try {
@@ -82,7 +88,10 @@ const AuthPage: React.FC = () => {
         const data = await res.json();
         
         if(res.ok) {
+           // 1. Update Global Auth State
            login(data.token, data.user);
+           
+           // 2. REDIRECT TO GENERATOR PAGE IMMEDIATELY
            navigate('/generate');
         }
       } catch (err) {
@@ -94,17 +103,16 @@ const AuthPage: React.FC = () => {
 
   const getHeaderContent = () => {
     switch (authMode) {
-      case 'login': return { title: 'Welcome back', subtitle: 'Enter your details to access your workspace.' };
-      case 'signup': return { title: 'Create account', subtitle: 'Start turning ideas into specs today.' };
-      case 'forgot': return { title: 'Reset Password', subtitle: 'Enter your email to receive a reset link.' };
+        case 'login': return { title: 'Welcome back', subtitle: 'Enter your details to access your workspace.' };
+        case 'signup': return { title: 'Create account', subtitle: 'Start turning ideas into specs today.' };
+        case 'forgot': return { title: 'Reset Password', subtitle: 'Enter your email to receive a reset link.' };
     }
   };
 
   const content = getHeaderContent();
 
   return (
-    // CHANGE HERE: Changed 'pt-28' to 'py-28' and 'overflow-hidden' to 'overflow-x-hidden'
-    <div className="min-h-screen flex items-center justify-center relative font-sans text-slate-900 overflow-x-hidden bg-[#F8FAFC] py-28">
+    <div className="min-h-screen flex items-center justify-center relative font-sans text-slate-900 overflow-hidden bg-[#F8FAFC] pt-28">
       
       {/* BACKGROUND EFFECTS */}
       <div className="fixed inset-0 pointer-events-none">
