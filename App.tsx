@@ -9,6 +9,7 @@ import FeaturesPage from './pages/FeaturesPage';
 import PricingPage from './pages/PricingPage';
 import IntegrationsPage from './pages/IntegrationsPage';
 import AuthPage from './pages/AuthPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import AboutPage from './pages/AboutPage';
 import BlogPage from './pages/BlogPage';
 import ContactPage from './pages/ContactPage';
@@ -40,6 +41,7 @@ const App: React.FC = () => {
             <Route path="/pricing" element={<PricingPage />} />
             <Route path="/integrations" element={<IntegrationsPage />} />
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/blog" element={<BlogPage />} />
             <Route path="/contact" element={<ContactPage />} />
