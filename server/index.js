@@ -51,17 +51,21 @@ const SubscriberSchema = new mongoose.Schema({
 const Subscriber = mongoose.model('Subscriber', SubscriberSchema);
 
 
-// --- EMAIL TRANSPORTER (BREVO) ---
-// Host: smtp-relay.brevo.com
-// Port: 587 (Standard)
+// --- EMAIL TRANSPORTER (BREVO ON PORT 2525) ---
+// Render Free Tier blocks Port 587. We MUST use Port 2525.
 const transporter = nodemailer.createTransport({
   host: "smtp-relay.brevo.com",
-  port: 587,
-  secure: false, // Must be false for 587
+  port: 2525,     // <--- THIS IS THE FIX. 2525 works on Render Free Tier.
+  secure: false,  // Must be false for 2525
   auth: {
     user: process.env.EMAIL_USER, // Your Brevo Login Email
-    pass: process.env.EMAIL_PASS  // Your Generated SMTP Key
-  }
+    pass: process.env.EMAIL_PASS  // Your Brevo SMTP Key
+  },
+  tls: {
+    rejectUnauthorized: false // Helps avoid "Self Signed Certificate" errors
+  },
+  connectionTimeout: 10000, // Wait 10 seconds before failing
+  greetingTimeout: 5000     // Wait 5 seconds for Brevo to say "Hello"
 });
 
 // Verify connection on startup
@@ -69,7 +73,7 @@ transporter.verify(function (error, success) {
   if (error) {
     console.log("❌ BREVO CONNECTION ERROR:", error);
   } else {
-    console.log("✅ Connected to Brevo SMTP Successfully");
+    console.log("✅ Connected to Brevo SMTP Successfully on Port 2525");
   }
 });
 
@@ -186,6 +190,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     res.status(200).json({ message: "Reset link sent successfully!" });
   } catch (error) {
     console.error("Email Error:", error);
+    // Sends the REAL error to your browser
     res.status(500).json({ message: "Failed to send email", error: error.message });
   }
 });
