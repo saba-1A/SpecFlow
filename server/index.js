@@ -51,23 +51,25 @@ const SubscriberSchema = new mongoose.Schema({
 const Subscriber = mongoose.model('Subscriber', SubscriberSchema);
 
 
-// --- EMAIL TRANSPORTER (RESEND SMTP) ---
+// --- EMAIL TRANSPORTER (BREVO SMTP) ---
+// Host: smtp-relay.brevo.com
+// Port: 587 (Standard)
 const transporter = nodemailer.createTransport({
-  host: "smtp.resend.com",
-  port: 465,
-  secure: true, 
+  host: "smtp-relay.brevo.com",
+  port: 587,
+  secure: false, // Must be false for 587
   auth: {
-    user: "resend",              
-    pass: process.env.EMAIL_PASS 
+    user: process.env.EMAIL_USER, // Your Brevo Login Email
+    pass: process.env.EMAIL_PASS  // Your Brevo SMTP Key
   }
 });
 
 // Verify connection on startup
 transporter.verify(function (error, success) {
   if (error) {
-    console.log("❌ RESEND CONNECTION ERROR:", error);
+    console.log("❌ BREVO CONNECTION ERROR:", error);
   } else {
-    console.log("✅ Connected to Resend SMTP Successfully");
+    console.log("✅ Connected to Brevo SMTP Successfully");
   }
 });
 
@@ -157,7 +159,7 @@ app.post('/api/auth/google', async (req, res) => {
   }
 });
 
-// 4. FORGOT PASSWORD (DEBUG MODE: AWAIT ENABLED)
+// 4. FORGOT PASSWORD (DEBUG MODE ENABLED)
 app.post('/api/auth/forgot-password', async (req, res) => {
   const { email } = req.body;
   try {
@@ -168,7 +170,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     const resetLink = `${CLIENT_URL}/reset-password/${token}`;
 
     const mailOptions = {
-      from: "SpecFlow <onboarding@resend.dev>", 
+      from: `"SpecFlow Support" <${process.env.EMAIL_USER}>`, // Brevo requires the sender to be YOU
       to: email, 
       subject: 'Password Reset',
       html: `
@@ -178,15 +180,12 @@ app.post('/api/auth/forgot-password', async (req, res) => {
       `
     };
 
-    // --- DEBUG CHANGE: Added 'await' ---
-    // The browser will now WAIT for this to finish.
-    // If it fails, the catch block below sends the real error to the frontend.
+    // AWAIT: This sends the error to your Network Tab if it fails
     await transporter.sendMail(mailOptions);
 
     res.status(200).json({ message: "Reset link sent successfully!" });
   } catch (error) {
     console.error("Email Error:", error);
-    // Send the EXACT error message to the browser
     res.status(500).json({ message: "Failed to send email", error: error.message });
   }
 });
@@ -238,7 +237,7 @@ app.post('/api/create-payment-intent', async (req, res) => {
 });
 
 /* 
-   NEWSLETTER SUBSCRIPTION (DEBUG MODE: AWAIT ENABLED)
+   NEWSLETTER SUBSCRIPTION (DEBUG MODE ENABLED)
 */
 app.post('/api/subscribe', async (req, res) => {
   const { email } = req.body;
@@ -257,7 +256,7 @@ app.post('/api/subscribe', async (req, res) => {
     await newSubscriber.save();
 
     const mailOptions = {
-      from: "SpecFlow <onboarding@resend.dev>",
+      from: `"SpecFlow Team" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: 'Welcome to SpecFlow Insights 🚀',
       html: `
@@ -269,20 +268,18 @@ app.post('/api/subscribe', async (req, res) => {
       `,
     };
 
-    // --- DEBUG CHANGE: Added 'await' ---
     await transporter.sendMail(mailOptions);
 
     res.status(201).json({ message: 'Successfully subscribed!' });
 
   } catch (error) {
     console.error('Subscription error:', error);
-    // Send the EXACT error message to the browser
     res.status(500).json({ error: error.message });
   }
 });
 
 /* 
-   CONTACT FORM (DEBUG MODE: AWAIT ENABLED)
+   CONTACT FORM (DEBUG MODE ENABLED)
 */
 app.post('/api/contact', async (req, res) => {
   const { name, email, subject, message } = req.body;
@@ -293,9 +290,9 @@ app.post('/api/contact', async (req, res) => {
 
   try {
     const mailOptions = {
-      from: "SpecFlow Contact <onboarding@resend.dev>", 
-      to: 'sabaf0186@gmail.com',  
-      replyTo: email,             
+      from: `"Contact Form" <${process.env.EMAIL_USER}>`, 
+      to: 'sabaf0186@gmail.com',  // Send to ADMIN
+      replyTo: email,             // Reply to USER
       subject: `New Contact Msg: ${subject || 'No Subject'}`,
       html: `
         <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee;">
@@ -310,14 +307,12 @@ app.post('/api/contact', async (req, res) => {
       `,
     };
 
-    // --- DEBUG CHANGE: Added 'await' ---
     await transporter.sendMail(mailOptions);
 
     res.status(200).json({ message: 'Email sent successfully!' });
 
   } catch (error) {
     console.error('Contact form error:', error);
-    // Send the EXACT error message to the browser
     res.status(500).json({ error: error.message });
   }
 });
