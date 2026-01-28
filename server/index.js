@@ -51,28 +51,29 @@ const SubscriberSchema = new mongoose.Schema({
 const Subscriber = mongoose.model('Subscriber', SubscriberSchema);
 
 
-// --- EMAIL TRANSPORTER (UPDATED FOR PORT 587) ---
-// We are switching to Port 587 because 465 is timing out on your server.
+// --- EMAIL TRANSPORTER (FIXED FOR RENDER) ---
+// 1. Uses Port 587 (Standard for Cloud)
+// 2. Uses "family: 4" to force IPv4 (Fixes ETIMEDOUT)
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
-  port: 587,            // Changed from 465 to 587
-  secure: false,        // Must be false for Port 587 (it uses STARTTLS automatically)
+  port: 587,
+  secure: false, // Must be false for port 587
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
   },
   tls: {
-    rejectUnauthorized: false // Helps prevents some cloud SSL errors
-  }
+    rejectUnauthorized: false // Helps prevent SSL errors on Render
+  },
+  family: 4 // <--- THIS IS THE MAGIC FIX. Forces IPv4 connection.
 });
 
-// --- VERIFY CONNECTION ON STARTUP ---
-// This will print a log immediately when the server starts so you know it works.
+// Verify connection on startup
 transporter.verify(function (error, success) {
   if (error) {
     console.log("❌ SMTP CONNECTION ERROR:", error);
   } else {
-    console.log("✅ Server is ready to send emails");
+    console.log("✅ SMTP Server is ready to take our messages");
   }
 });
 
@@ -162,7 +163,7 @@ app.post('/api/auth/google', async (req, res) => {
   }
 });
 
-// 4. FORGOT PASSWORD (FIXED SPEED)
+// 4. FORGOT PASSWORD
 app.post('/api/auth/forgot-password', async (req, res) => {
   const { email } = req.body;
   try {
@@ -183,7 +184,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
       `
     };
 
-    // NO AWAIT HERE - Send in background
+    // Send in background
     transporter.sendMail(mailOptions).catch(err => console.error("Email Error:", err));
 
     res.status(200).json({ message: "Reset link sent successfully!" });
@@ -240,7 +241,7 @@ app.post('/api/create-payment-intent', async (req, res) => {
 });
 
 /* 
-   NEWSLETTER SUBSCRIPTION (FIXED SPEED)
+   NEWSLETTER SUBSCRIPTION
 */
 app.post('/api/subscribe', async (req, res) => {
   const { email } = req.body;
@@ -274,7 +275,6 @@ app.post('/api/subscribe', async (req, res) => {
       `,
     };
 
-    // NO AWAIT HERE - Send in background
     transporter.sendMail(mailOptions).catch(err => console.error("Email Error:", err));
 
     res.status(201).json({ message: 'Successfully subscribed!' });
@@ -286,7 +286,7 @@ app.post('/api/subscribe', async (req, res) => {
 });
 
 /* 
-   CONTACT FORM (FIXED SPEED)
+   CONTACT FORM
 */
 app.post('/api/contact', async (req, res) => {
   const { name, email, subject, message } = req.body;
@@ -314,7 +314,6 @@ app.post('/api/contact', async (req, res) => {
       `,
     };
 
-    // NO AWAIT HERE - Send in background
     transporter.sendMail(mailOptions).catch(err => console.error("Email Error:", err));
 
     res.status(200).json({ message: 'Email sent successfully!' });
